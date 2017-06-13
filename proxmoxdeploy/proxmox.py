@@ -17,7 +17,7 @@
 
 from .cloudinit.templates import VALID_IMAGE_FORMATS, VALID_COMPRESSION_FORMATS
 from .exceptions import SSHCommandInvocationException
-from .questions import QuestionGroup, IntegerQuestion, EnumQuestion, \
+from .questions import Question, QuestionGroup, IntegerQuestion, EnumQuestion, \
     NoAskQuestion
 from openssh_wrapper import SSHError
 import logging
@@ -80,7 +80,8 @@ def ask_proxmox_questions(proxmox):
             "Size of disk (GB)", min_value=4,
             max_value=proxmox.get_max_disk_size(chosen_node, chosen_storage))),
         ("vmid", IntegerQuestion("Virtual Machine id", min_value=1,
-                                 default=proxmox.get_next_vmid()))
+                                 default=proxmox.get_next_vmid())),
+        ("mac", Question("MAC Address", default='auto')) 
     ])
 
     proxmox_questions.ask_all()
@@ -213,8 +214,7 @@ class ProxmoxClient(object):
             return min([int(math.floor(_node['maxdisk'] / 1024 ** 3))
                         for _node in self.client.nodes.get()])
 
-    def create_vm(self, node, vmid, name, cpu, cpu_family, memory,
-                  vlan_id=None):
+    def create_vm(self, node, vmid, name, cpu, cpu_family, memory, mac):
         """
         Creates a VM.
 
@@ -232,13 +232,16 @@ class ProxmoxClient(object):
             What CPU family to emulate.
         memory: int
             Megabytes of memory.
-        vlan_id: int
-            VLAN ID of the network device.
+        mac: str
+            MAC address of the network device.
         """
         node = self.client.nodes(node)
-        net0 = "virtio,bridge=vmbr0"
-        if vlan_id:
-            net0 += ",tag={0}".format(vlan_id)
+
+        # build net0
+        net0 = 'virtio'
+        if(mac != 'auto'):
+            net0 += "=" + mac
+        net0 += ",bridge=vmbr0"
 
         logger.info("Creating Virtual Machine")
         node.qemu.create(
@@ -366,7 +369,6 @@ class ProxmoxClient(object):
             Override the disk size. If not specified, the size is calculated
             from the file. In kilobytes.
         """
-        tmpfile = None
         try:
             tmpfile = self._upload(ssh_session, filename)
             tmpfile = self._decompress_image(ssh_session, tmpfile)

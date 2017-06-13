@@ -1,5 +1,6 @@
 #cloud-config
 hostname: {{ context.name }}
+manage_etc_hosts: true
 
 locale: {{ context.locale }}
 timezone: {{ context.timezone }}
@@ -14,6 +15,7 @@ write_files:
     owner: root:root
 
 ssh_pwauth: {{ context.ssh_pass_auth }}
+password: {{ context.ssh_pass }}
 ssh_authorized_keys:
   {% for ssh_key in context.ssh_root_keys -%}
   - {{ ssh_key }}

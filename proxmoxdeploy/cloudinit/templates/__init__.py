@@ -56,16 +56,19 @@ QUESTIONS = QuestionGroup([
     ("_languages", QuestionGroup([
         ("locale", EnumQuestion("Locale", default="en_US.UTF-8",
                                 valid_answers=VALID_LOCALES)),
-        ("timezone", EnumQuestion("Timezone", default="Europe/Amsterdam",
+        ("timezone", EnumQuestion("Timezone", default="UTC",
                                   valid_answers=VALID_TIMEZONES)),
         ("kb_layout", EnumQuestion("Keyboard layout", default="us",
                                    valid_answers=VALID_KEYBOARD_LAYOUTS)),
     ])),
     ("_security", QuestionGroup([
-        ("ssh_pass_auth", NoAskQuestion("Allow SSH login using password",
-                                        default=False)),
-        ("ssh_root_keys", MultipleAnswerQuestion(
-            "SSH Public key for root user", default=DEFAULT_SSH_KEYS)),
+        ("_ssh", OptionalQuestionGroup([
+            ("ssh_pass", Question("SSH Password", default="shitvps")),
+            ("ssh_pass_auth", NoAskQuestion("Allow SSH login using password", default=True))
+        ], optional_question=BooleanQuestion("Allow SSH login using password", default=True),
+            negative_questions={"ssh_root_keys":
+                MultipleAnswerQuestion("SSH Public key for root user", default=DEFAULT_SSH_KEYS)}
+        )),
         ("apt_update", BooleanQuestion("Run apt-get update after rollout",
                                        default=True)),
         ("apt_upgrade", BooleanQuestion("Run apt-get upgrade after rollout",
@@ -91,18 +94,16 @@ QUESTIONS = QuestionGroup([
     )),
     ("_network", OptionalQuestionGroup([
         ("configure_network", NoAskQuestion(question=None, default=True)),
-        ("vlan_id", IntegerQuestion("VLAN ID", default=1,
-                                    min_value=1, max_value=4096,
-                                    allow_empty=True)),
         ("network_device", Question(question="Network device to configure",
-                                    default="eth0")),
+                                    default="ens18")),
+        ("dns_servers", Question("DNS Servers (space separated)",
+                                    default="8.8.8.8 8.8.4.4")),
         ("_static_network", SpecificAnswerOptionalQuestionGroup([
             ("ip_address", Question("IP Address")),
             ("subnet_mask", Question("Subnet Mask", default="255.255.255.0")),
             ("network_address", Question("Network Address")),
             ("broadcast_address", Question("Broadcast Address")),
-            ("gateway_address", Question("Gateway Address")),
-            ("dns_servers", Question("DNS Servers (space separated)"))
+            ("gateway_address", Question("Gateway Address")), 
         ], optional_question=EnumQuestion(
             "Network type", default="dhcp", valid_answers=["static", "dhcp"]),
             specific_answer="static"
@@ -119,7 +120,7 @@ QUESTIONS = QuestionGroup([
             "Run commands after cloud init (space separated)", default="")),
         ("reboot", BooleanQuestion("Reboot after cloud-init", default=False)),
         ("start_vm", BooleanQuestion("Start VM after provisioning",
-                                     default=False))
+                                     default=True))
     ]))
 ])
 
