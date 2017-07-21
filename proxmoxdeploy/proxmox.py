@@ -182,7 +182,8 @@ class ProxmoxClient(object):
         storages = []
         for storage in self.client.nodes(node).storage.get():
             if ("images" in storage['content'].split(",")
-                    and storage['type'] in ("dir", "lvm", "lvmthin", "nfs")):
+                    and storage['type'] in ("dir", "lvm", "lvmthin", "nfs")
+                    and storage['storage'] != "local"):
                 storages.append(storage['storage'])
         return storages
 
