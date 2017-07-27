@@ -240,7 +240,7 @@ class ProxmoxClient(object):
 
         # build net0
         net0 = 'virtio'
-        if(mac != 'auto'):
+        if mac != 'auto':
             net0 += "=" + mac
         net0 += ",bridge=vmbr0,firewall=1"
 
