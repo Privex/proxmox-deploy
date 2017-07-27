@@ -242,7 +242,7 @@ class ProxmoxClient(object):
         net0 = 'virtio'
         if(mac != 'auto'):
             net0 += "=" + mac
-        net0 += ",bridge=vmbr0"
+        net0 += ",bridge=vmbr0,firewall=1"
 
         logger.info("Creating Virtual Machine")
         node.qemu.create(
@@ -600,3 +600,63 @@ class ProxmoxClient(object):
         """
         _node = self.client.nodes(node)
         _node.qemu(vmid).config.set(serial0="socket")
+
+    def enable_firewall(self, node, vmid):
+        """
+        Enables the firewall
+
+        Parameters
+        ----------
+        node: str
+            Node the VM resides on.
+        vmid: int
+            ID of VM to firewall.
+        """
+        _node = self.client.nodes(node)
+        _node.qemu(vmid).firewall.options.set(enable=1)
+
+    def create_firewall_ipset(self, node, vmid):
+        """
+        Creates the ipset for net0
+
+        Parameters
+        ----------
+        node: str
+            Node the VM resides on.
+        vmid: int
+            ID of VM to firewall.
+        """
+        _node = self.client.nodes(node)
+        _node.qemu(vmid).firewall.ipset.create(name='ipfilter-net0')
+
+    def add_ipset_cidr(self, node, vmid, cidr):
+        """
+        Adds a cidr to the ipset for net0
+
+        Parameters
+        ----------
+        node: str
+            Node the VM resides on.
+        vmid: int
+            ID of VM to firewall.
+        cidr: str
+            CIDR of the IP to allow
+        """
+        _node = self.client.nodes(node)
+        _node.qemu(vmid).firewall.ipset.ipfilter-net0.create(cidr=cidr)
+
+    def add_firewall_rule(self, node, vmid, dest):
+        """
+        Adds a rule to the ipset for net0
+
+        Parameters
+        ----------
+        node: str
+            Node the VM resides on.
+        vmid: int
+            ID of VM to firewall.
+        dest: str
+            IP, IP list, or IP set to use as the destination filter
+        """
+        _node = self.client.nodes(node)
+        _node.qemu(vmid).firewall.rules.post(action='ACCEPT', type='in', dest=dest, enable=1)

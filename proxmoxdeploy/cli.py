@@ -130,6 +130,8 @@ def main():
                              disk_size=disk_size)
         logger.info("Adding serial console to VM")
         api.attach_serial_console(node=proxmox['node'], vmid=proxmox['vmid'])
+        api.enable_firewall(node=proxmox['node'], vmid=proxmox['vmid'])
+        api.add_firewall_rule(node=proxmox['node'], vmid=proxmox['vmid'], dest=context['ip_address'])
     except CommandInvocationException as cie:
         logger.error("Provisioning failed")
         if hasattr(cie, "stdout") or hasattr(cie, "stderr"):
